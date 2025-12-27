@@ -59,6 +59,12 @@ This project is specifically optimized for Android devices using Termux to turn 
     python detect_server.py --stream http://192.168.1.100:8080/video
     ```
 
+    *Example (IP Webcam Pro with Password):*
+    ```bash
+    # Format: http://username:password@IP:PORT/video
+    python detect_server.py --stream http://admin:mypassword@192.168.1.100:8080/video
+    ```
+
     *Example (Local Webcam):*
     ```bash
     python detect_server.py --stream 0
