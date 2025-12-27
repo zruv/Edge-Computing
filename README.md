@@ -1,4 +1,4 @@
-# Edge Vision AI 👁️
+# Edge Vision AI
 
 A lightweight, high-performance object detection system designed for edge computing. It runs state-of-the-art **EfficientDet-Lite4** models on low-power devices (like Android phones via Termux) and serves a real-time, futuristic web dashboard to any device on the network.
 
