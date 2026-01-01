@@ -5,10 +5,11 @@ A lightweight, high-performance object detection system designed for edge comput
 ## 🚀 Features
 
 *   **Real-time Detection:** Uses TensorFlow Lite for efficient inference on edge hardware.
-*   **Async Architecture:** Multi-threaded design decouples video capture, AI processing, and web streaming to maximize FPS and prevent lag.
-*   **Web Dashboard:** Accessible via any browser with a responsive "Cyberpunk/Hacker" aesthetic.
-*   **Edge Optimized:** Specifically tuned for running on Termux (Android) but compatible with standard Linux/macOS environments.
-*   **Network Stream:** Consumes video from IP Webcam sources or local USB cameras.
+*   **Hardware Acceleration:** Supports **Android NNAPI (NPU/GPU)** via the `--enable_npu` flag for faster performance on mobile devices.
+*   **Async Architecture:** Multi-threaded design decouples video capture, AI processing, and web streaming to maximize FPS.
+*   **Web Dashboard:** Accessible via any browser with a responsive "Cyberpunk/Hacker" aesthetic and real-time hardware status.
+*   **Edge Optimized:** Auto-detects device name (e.g., "Samsung A30") and optimizes for Android Termux environments.
+*   **Smart Stream:** Consumes video from IP Webcam sources (auto-corrects URLs) or local USB cameras.
 
 ## 🛠️ Tech Stack
 
@@ -56,7 +57,12 @@ This project is specifically optimized for Android devices using Termux to turn 
 
     *Example (IP Webcam):*
     ```bash
-    python detect_server.py --stream http://192.168.1.100:8080/video
+    python detect_server.py --stream 192.168.1.100:8080/video
+    ```
+
+    *Example (With NPU/GPU Acceleration - Recommended for Android):*
+    ```bash
+    python detect_server.py --stream 192.168.1.100:8080/video --enable_npu
     ```
 
     *Example (IP Webcam Pro with Password):*
@@ -80,11 +86,13 @@ You can customize the behavior with command-line arguments:
 
 | Argument | Default | Description |
 | :--- | :--- | :--- |
-| `--stream` | `http://127.0.0.1:8080/video` | Video source URL or ID |
+| `--stream` | `http://127.0.0.1:8080/video` | Video source URL (auto-adds http://) or ID (0 for USB) |
 | `--model` | `efficientdet_lite4.tflite` | Path to TFLite model file |
 | `--labels` | `coco_labels.txt` | Path to labels file |
 | `--threshold`| `0.5` | Detection confidence threshold (0.0 - 1.0) |
 | `--port` | `5000` | Web server port |
+| `--enable_npu` | `False` | Enable Android NNAPI (NPU/GPU) acceleration |
+| `--device_name` | `Auto-Detected` | Custom device name to display on dashboard |
 
 ## 🤝 Contributing
 

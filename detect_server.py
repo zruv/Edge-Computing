@@ -3,8 +3,12 @@ import numpy as np
 import time
 import argparse
 import threading
-from flask import Flask, Response
-from tflite_runtime.interpreter import Interpreter
+from flask import Flask, Response, render_template_string
+try:
+    from tflite_runtime.interpreter import Interpreter, load_delegate
+except ImportError:
+    from tflite_runtime.interpreter import Interpreter
+    load_delegate = None
 
 # Initialize Flask
 app = Flask(__name__)
@@ -16,6 +20,7 @@ current_detections = []       # The latest results from the AI
 frame_lock = threading.Lock() # Thread safety for frame access
 detections_lock = threading.Lock() # Thread safety for detections access
 program_running = True        # To stop threads cleanly
+ai_status = {"model": "Loading...", "mode": "Initializing...", "status": "WAITING"}
 
 # Configuration
 args = None
@@ -33,8 +38,19 @@ def load_labels(path):
 def camera_thread_func():
     global current_frame, program_running
     
-    print(f"Connecting to camera stream at {args.stream}...")
-    cap = cv2.VideoCapture(args.stream)
+    # Process stream argument
+    stream_source = args.stream
+    if isinstance(stream_source, str):
+        # If it's a number (e.g., "0"), convert to int for USB camera
+        if stream_source.isdigit():
+            stream_source = int(stream_source)
+        # If it looks like an IP but misses http://, add it
+        elif "http" not in stream_source and (":" in stream_source or "." in stream_source):
+             stream_source = "http://" + stream_source
+             print(f"Auto-corrected stream URL to: {stream_source}")
+
+    print(f"Connecting to camera stream at {stream_source}...")
+    cap = cv2.VideoCapture(stream_source)
     time.sleep(1.0) # Warm up
 
     if not cap.isOpened():
@@ -65,8 +81,38 @@ def ai_thread_func():
     global current_frame, current_detections, program_running
     
     print(f"Loading model: {args.model}...")
+    
+    # Configure NPU Delegate if requested
+    delegates = []
+    if args.enable_npu:
+        print("Attempting to load NNAPI (NPU) Delegate...")
+        if load_delegate is not None:
+            # List of potential paths for Android NNAPI
+            possible_lib_paths = [
+                'libnnapi.so',               # Standard lookup
+                '/system/lib64/libnnapi.so', # Android 64-bit system (Common)
+                '/system/lib/libnnapi.so'    # Android 32-bit system
+            ]
+            
+            delegate = None
+            for lib_path in possible_lib_paths:
+                try:
+                    delegate = load_delegate(lib_path)
+                    print(f"SUCCESS: NNAPI Delegate loaded from {lib_path}!")
+                    break
+                except Exception:
+                    continue
+            
+            if delegate:
+                delegates = [delegate]
+            else:
+                print("WARNING: Failed to load NNAPI delegate from any known path (libnnapi.so).")
+                print("Falling back to CPU.")
+        else:
+            print("WARNING: 'load_delegate' not found in tflite_runtime. Cannot use NPU.")
+
     try:
-        interpreter = Interpreter(model_path=args.model)
+        interpreter = Interpreter(model_path=args.model, experimental_delegates=delegates)
         interpreter.allocate_tensors()
     except Exception as e:
         print(f"Error loading model: {e}")
@@ -81,7 +127,17 @@ def ai_thread_func():
 
     labels = load_labels(args.labels)
     
-    print("AI Engine Started (Async Mode)")
+    # Status for Dashboard
+    global ai_status
+    accel_type = "NNAPI (HW Accel)" if args.enable_npu else "CPU (Standard)"
+    
+    ai_status = {
+        "model": args.model.split('/')[-1],
+        "mode": accel_type,
+        "status": "ACTIVE"
+    }
+
+    print(f"AI Engine Started on {args.device_name} using {accel_type}")
 
     while program_running:
         # 1. Get the latest frame
@@ -190,7 +246,7 @@ def generate_frames():
 
 @app.route("/")
 def index():
-    return """
+    return render_template_string("""
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -378,25 +434,25 @@ def index():
             <div class="info-panel">
                 <div class="info-card">
                     <div class="info-label">Model</div>
-                    <div class="info-value">EfficientDet-Lite4</div>
+                    <div class="info-value">{{ model }}</div>
                 </div>
                 <div class="info-card">
-                    <div class="info-label">Mode</div>
-                    <div class="info-value">ASYNC / HIGH-RES</div>
+                    <div class="info-label">Hardware</div>
+                    <div class="info-value">{{ mode }}</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Status</div>
-                    <div class="info-value">ACTIVE</div>
+                    <div class="info-value">{{ status }}</div>
                 </div>
             </div>
         </div>
 
         <footer>
-            SECURE CONNECTION • LOCALHOST • TERMUX
+            SECURE CONNECTION • {{ device }} • TERMUX
         </footer>
     </body>
     </html>
-    """
+    """, model=ai_status['model'], mode=ai_status['mode'], status=ai_status['status'], device=args.device_name)
 
 @app.route("/video_feed")
 def video_feed():
@@ -409,6 +465,18 @@ if __name__ == '__main__':
     parser.add_argument('--labels', default='coco_labels.txt', help='Labels path')
     parser.add_argument('--threshold', type=float, default=0.5, help='Confidence threshold')
     parser.add_argument('--port', type=int, default=5000, help='Web server port')
+    parser.add_argument('--enable_npu', action='store_true', help='Attempt to use NNAPI (NPU/GPU) acceleration')
+    
+    # Auto-detect device name if possible (works on Android Termux)
+    default_device = 'ANDROID-EDGE'
+    try:
+        import subprocess
+        prop = subprocess.check_output(['getprop', 'ro.product.model']).decode('utf-8').strip()
+        if prop: default_device = prop
+    except:
+        pass
+
+    parser.add_argument('--device_name', default=default_device, help='Device name for dashboard')
     
     args = parser.parse_args()
 
