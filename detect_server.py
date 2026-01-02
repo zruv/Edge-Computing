@@ -150,16 +150,34 @@ def ai_thread_func():
             time.sleep(0.1)
             continue
 
-        # 2. Pre-process
-        frame_resized = cv2.resize(frame_to_process, (width, height))
-        input_data = np.expand_dims(frame_resized, axis=0)
+        # 2. Pre-process (Letterbox Resize to fix stretching)
+        h_orig, w_orig = frame_to_process.shape[:2]
+        
+        # Calculate scale to fit inside model input while keeping aspect ratio
+        scale = min(width / w_orig, height / h_orig)
+        new_w, new_h = int(w_orig * scale), int(h_orig * scale)
+        
+        # Resize the image
+        resized_image = cv2.resize(frame_to_process, (new_w, new_h))
+        
+        # Create a blank canvas (gray background) of model size
+        input_data = np.full((height, width, 3), 128, dtype=np.uint8)
+        
+        # Paste the resized image into the center
+        dw = (width - new_w) // 2
+        dh = (height - new_h) // 2
+        input_data[dh:dh+new_h, dw:dw+new_w] = resized_image
+        
+        # Expand dims for model input
+        input_data = np.expand_dims(input_data, axis=0)
 
         if is_floating_model:
             input_data = (np.float32(input_data) - 127.5) / 127.5
         else:
+            # EfficientDet usually expects uint8, but just in case
             input_data = input_data.astype(input_details[0]['dtype'])
 
-        # 3. Inference (This is the slow part)
+        # 3. Inference
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
 
@@ -171,14 +189,44 @@ def ai_thread_func():
         new_detections = []
         for i in range(len(scores)):
             if scores[i] > args.threshold:
-                # We save normalized coordinates (0.0 to 1.0) so we can scale them to any display size later
-                ymin, xmin, ymax, xmax = boxes[i]
-                
-                # Filter out bad boxes
-                if ymin > ymax or xmin > xmax: continue
-
                 class_id = int(classes[i])
                 object_name = labels[class_id] if class_id < len(labels) else "Unknown"
+
+                # FILTER: Only show Humans
+                if object_name != 'person':
+                    continue
+
+                # Get box in model coordinates (0.0 - 1.0)
+                ymin, xmin, ymax, xmax = boxes[i]
+
+                # Convert Model Coords -> Original Image Coords
+                # 1. Denormalize to model pixel coords
+                xmin = xmin * width
+                xmax = xmax * width
+                ymin = ymin * height
+                ymax = ymax * height
+
+                # 2. Remove padding (shift origin)
+                xmin -= dw
+                xmax -= dw
+                ymin -= dh
+                ymax -= dh
+
+                # 3. Scale back to original size
+                xmin /= scale
+                xmax /= scale
+                ymin /= scale
+                ymax /= scale
+
+                # 4. Normalize back to 0.0 - 1.0 for the display thread
+                xmin = max(0, min(1, xmin / w_orig))
+                xmax = max(0, min(1, xmax / w_orig))
+                ymin = max(0, min(1, ymin / h_orig))
+                ymax = max(0, min(1, ymax / h_orig))
+
+                # Filter out bad boxes
+                if ymin >= ymax or xmin >= xmax: continue
+                
                 confidence = int(scores[i] * 100)
                 
                 new_detections.append({
