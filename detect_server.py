@@ -23,7 +23,16 @@ program_running = True        # To stop threads cleanly
 ai_status = {"model": "Loading...", "mode": "Initializing...", "status": "WAITING"}
 
 # Configuration
-args = None
+class DefaultArgs:
+    device_name = "EDGE-DEVICE"
+    stream = "0"
+    model = "efficientdet_lite4.tflite"
+    labels = "coco_labels.txt"
+    threshold = 0.3
+    enable_npu = False
+    port = 5000
+
+args = DefaultArgs()
 
 def load_labels(path):
     try:
