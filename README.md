@@ -25,7 +25,7 @@ A lightweight, high-performance object detection system designed for edge comput
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/edge-vision-ai.git
+    git clone https://github.com/zruv/edge-vision-ai.git
     cd edge-vision-ai
     ```
 
