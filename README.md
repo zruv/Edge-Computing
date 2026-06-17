@@ -2,6 +2,10 @@
 
 A lightweight, high-performance object detection system designed for edge computing. It runs state-of-the-art **EfficientDet-Lite4** models on low-power devices (like Android phones via Termux) and serves a real-time, futuristic web dashboard to any device on the network.
 
+## Video Demo
+https://github.com/user-attachments/assets/f01d7228-77f2-483b-af97-312fe620a3fd
+Here all computing is done in mobile phone itself, computer is being used only to monitor/stream video that is being captured by phone.
+
 ## 🚀 Features
 
 *   **Real-time Detection:** Uses TensorFlow Lite for efficient inference on edge hardware.
