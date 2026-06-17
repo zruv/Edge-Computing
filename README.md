@@ -4,6 +4,7 @@ A lightweight, high-performance object detection system designed for edge comput
 
 ## Video Demo
 https://github.com/user-attachments/assets/f01d7228-77f2-483b-af97-312fe620a3fd
+
 Here all computing is done in mobile phone itself, computer is being used only to monitor/stream video that is being captured by phone.
 
 ## 🚀 Features
