@@ -7,7 +7,7 @@ https://github.com/user-attachments/assets/f01d7228-77f2-483b-af97-312fe620a3fd
 
 Here all computing is done in mobile phone itself, computer is being used only to monitor/stream video that is being captured by phone.
 
-## 🚀 Features
+## Features
 
 *   **Real-time Detection:** Uses TensorFlow Lite for efficient inference on edge hardware.
 *   **Hardware Acceleration:** Supports **Android NNAPI (NPU/GPU)** via the `--enable_npu` flag for faster performance on mobile devices.
@@ -16,7 +16,7 @@ Here all computing is done in mobile phone itself, computer is being used only t
 *   **Edge Optimized:** Auto-detects device name (e.g., "Samsung A30") and optimizes for Android Termux environments.
 *   **Smart Stream:** Consumes video from IP Webcam sources (auto-corrects URLs) or local USB cameras.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 *   **Language:** Python 3.x
 *   **Web Framework:** Flask
@@ -24,7 +24,7 @@ Here all computing is done in mobile phone itself, computer is being used only t
 *   **AI Engine:** TensorFlow Lite Runtime
 *   **Model:** EfficientDet-Lite4 (COCO Dataset)
 
-## 📦 Installation
+## Installation
 
 ### General (Linux/macOS/PC)
 
@@ -43,13 +43,13 @@ Here all computing is done in mobile phone itself, computer is being used only t
 3.  **Download Model:**
     Ensure `efficientdet_lite4.tflite` and `coco_labels.txt` are in the project root.
 
-### Android (Termux) Setup 📱
+### Android (Termux) Setup
 
 This project is specifically optimized for Android devices using Termux to turn old phones into powerful AI cameras.
 
 👉 **See the [Detailed Setup Guide](SETUP_GUIDE.md) for step-by-step mobile instructions.**
 
-## 🚦 Usage
+## Usage
 
 1.  **Start your video source:**
     *   **IP Webcam (Android):** Start the server on your phone app.
@@ -85,7 +85,7 @@ This project is specifically optimized for Android devices using Termux to turn 
     Open your browser and navigate to:
     `http://localhost:5000` (or `http://<DEVICE_IP>:5000` if accessing remotely)
 
-## ⚙️ Configuration
+## Configuration
 
 You can customize the behavior with command-line arguments:
 
@@ -99,6 +99,6 @@ You can customize the behavior with command-line arguments:
 | `--enable_npu` | `False` | Enable Android NNAPI (NPU/GPU) acceleration |
 | `--device_name` | `Auto-Detected` | Custom device name to display on dashboard |
 
-## 🤝 Contributing
+## Contributing
 
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
